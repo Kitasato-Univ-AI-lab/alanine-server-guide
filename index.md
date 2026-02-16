@@ -1,3 +1,5 @@
+[English version](/alanine-server-guide/en/)
+
 # alanine サーバー: SSH接続とSGEジョブ投入ガイド
 
 最終確認日: 2026-02-16
@@ -156,7 +158,7 @@ qhost
 
 ## 5. 最小のバッチジョブ投入（CPU）
 
-### 4.1 スクリプト例
+### 5.1 スクリプト例
 
 `job_cpu.sh`:
 
@@ -185,13 +187,13 @@ sleep 10
 echo "END=$(date)"
 ```
 
-### 4.2 投入
+### 5.2 投入
 
 ```bash
 qsub job_cpu.sh
 ```
 
-### 4.3 監視
+### 5.3 監視
 
 ```bash
 qstat -u $USER
@@ -232,7 +234,7 @@ python3 train.py
 qsub job_gpu.sh
 ```
 
-### 5.1 ノード固定でGPUジョブを投げる例
+### 6.1 ノード固定でGPUジョブを投げる例
 
 ```bash
 #!/bin/bash
@@ -256,13 +258,13 @@ python Train.py
 
 ## 7. 対話実行
 
-### 6.1 `qlogin`（対話シェル）
+### 7.1 `qlogin`（対話シェル）
 
 ```bash
 qlogin -q login.q
 ```
 
-### 6.2 `qrsh`（単発コマンド）
+### 7.2 `qrsh`（単発コマンド）
 
 ```bash
 qrsh -q main.q hostname
@@ -270,31 +272,31 @@ qrsh -q main.q hostname
 
 ## 8. よく使う運用コマンド
 
-### 7.1 自分のジョブ一覧
+### 8.1 自分のジョブ一覧
 
 ```bash
 qstat -u $USER
 ```
 
-### 7.2 全体キュー状況
+### 8.2 全体キュー状況
 
 ```bash
 qstat -f
 ```
 
-### 7.3 ジョブ詳細（pending理由も確認可能）
+### 8.3 ジョブ詳細（pending理由も確認可能）
 
 ```bash
 qstat -j <JOB_ID>
 ```
 
-### 7.4 ジョブ削除
+### 8.4 ジョブ削除
 
 ```bash
 qdel <JOB_ID>
 ```
 
-### 7.5 投入前の適合性チェック
+### 8.5 投入前の適合性チェック
 
 ```bash
 qsub -w v -q main.q -pe smp 4 -l h_vmem=4G -b y /bin/true
@@ -342,7 +344,7 @@ qsub job_array.sh
 
 ## 11. 詰まりやすいポイント
 
-### 10.1 ジョブが `qw` のまま
+### 11.1 ジョブが `qw` のまま
 
 確認順:
 
@@ -351,7 +353,7 @@ qsub job_array.sh
 3. 資源要求が厳しすぎないか確認 (`h_vmem`, `gpu`, `-pe smp`)
 4. `qsub -w v ...` で事前検証
 
-### 10.2 GPUジョブが期待どおり動かない
+### 11.2 GPUジョブが期待どおり動かない
 
 確認順:
 
@@ -362,19 +364,19 @@ qsub job_array.sh
 
 ## 12. すぐ使えるテンプレート（コピペ用）
 
-### 11.1 CPU 1コア最小
+### 12.1 CPU 1コア最小
 
 ```bash
 qsub -cwd -N quick_cpu -q main.q -pe smp 1 -l h_vmem=2G -b y '/bin/bash -lc "hostname; date"'
 ```
 
-### 11.2 GPU 1枚最小
+### 12.2 GPU 1枚最小
 
 ```bash
 qsub -cwd -N quick_gpu -q gpu.q -pe smp 1 -l h_vmem=4G,gpu=1 -b y '/bin/bash -lc "hostname; nvidia-smi -L"'
 ```
 
-### 11.3 実運用テンプレート（GPU学習）
+### 12.3 実運用テンプレート（GPU学習）
 
 ```bash
 #$ -S /bin/bash
@@ -392,7 +394,7 @@ python Train.py
 
 ## 13. CUDA運用
 
-### 12.1 CUDA確認コマンド（ジョブ内で実行）
+### 13.1 CUDA確認コマンド（ジョブ内で実行）
 
 ```bash
 which nvcc
@@ -406,7 +408,7 @@ nvidia-smi
 - `nvidia-smi` 側では Driver 460.73.01 / CUDA Version 11.2 と表示される
 - 実行時は、使用するフレームワーク（PyTorch等）の対応CUDAバージョンを必ず確認する
 
-### 12.2 ジョブスクリプト先頭の推奨形
+### 13.2 ジョブスクリプト先頭の推奨形
 
 ```bash
 #!/bin/bash
@@ -424,7 +426,7 @@ nvcc --version
 nvidia-smi -L
 ```
 
-### 12.3 Python（PyTorch等）利用時
+### 13.3 Python（PyTorch等）利用時
 
 - GPU可否チェックは `qsub` ジョブ内で実行する
 - 依存ライブラリは `venv`/`conda` を使ってプロジェクトごとに固定する
@@ -444,7 +446,7 @@ PY
 
 `hpch1` は `qsub` 配信先ではないため、SSHでログインして実行する。
 
-### 13.1 接続と基本確認
+### 14.1 接続と基本確認
 
 ```bash
 ssh <ユーザー名>@hpch1
@@ -452,7 +454,7 @@ hostname
 nvidia-smi -L
 ```
 
-### 13.2 実行例（`tmux` 推奨）
+### 14.2 実行例（`tmux` 推奨）
 
 ```bash
 tmux new -s train
@@ -473,11 +475,3 @@ Ctrl-b d
 ```bash
 tmux attach -t train
 ```
-
----
-
-必要ならこの文書を次の版で追加できます:
-
-- MPI実行 (`-pe mpi`) の標準テンプレート
-- Python/Conda仮想環境の初期化付きテンプレート
-- 学生向け短縮版（最低限コマンドのみ）
