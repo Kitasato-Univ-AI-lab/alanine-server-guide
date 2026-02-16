@@ -2,11 +2,6 @@
 
 # alanine Server: SSH Access and SGE Job Submission Guide
 
-Last verified: 2026-02-16  
-Target host: `alanine` (Ubuntu 22.04.3 LTS)
-
-This document is based on direct checks of the actual server configuration.
-
 ## 1. SSH Access
 
 ### 1.1 Connection Targets
