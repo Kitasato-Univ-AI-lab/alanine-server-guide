@@ -460,50 +460,9 @@ hostname
 nvidia-smi -L
 ```
 
-### 14.2 Run with `tmux`
+### 14.2 Submit using a shell script
 
-```bash
-tmux new -s train
-source $HOME/.pyenv/versions/anaconda3-2023.03/bin/activate
-conda activate <env_name>
-export CUDA_VISIBLE_DEVICES="0,1,2,3"
-python Train.py
-```
-
-On `hpca1` (single GPU), use for example:
-
-```bash
-tmux new -s train
-source $HOME/.pyenv/versions/anaconda3-2023.03/bin/activate
-conda activate <env_name>
-export CUDA_VISIBLE_DEVICES="0"
-python Train.py
-```
-
-Detach:
-
-```bash
-Ctrl-b d
-```
-
-Reattach:
-
-```bash
-tmux attach -t train
-```
-
-### 14.3 Recommended job flow on `hpch1` / `hpca1`
-
-On `hpch1` / `hpca1`, jobs are typically run by direct execution (not `qsub`).
-
-1. Check available GPUs
-
-```bash
-nvidia-smi --query-gpu=index,name,memory.used,memory.total,utilization.gpu --format=csv
-nvidia-smi --query-compute-apps=pid,process_name,used_memory,gpu_uuid --format=csv,noheader
-```
-
-2. Create a run script (example: `run_train.sh`)
+Create a run script first (example: `run_train.sh`).
 
 ```bash
 #!/bin/bash
@@ -514,7 +473,22 @@ export CUDA_VISIBLE_DEVICES="0"
 python Train.py
 ```
 
-3. Run in `tmux` (recommended)
+You can run it in three ways:
+
+1. Foreground (short jobs)
+
+```bash
+bash run_train.sh
+```
+
+2. Background with `nohup` (survives disconnect)
+
+```bash
+mkdir -p logs
+nohup bash run_train.sh > logs/nohup.$(date +%F_%H%M%S).log 2>&1 &
+```
+
+3. `tmux` (recommended for long jobs)
 
 ```bash
 mkdir -p logs
@@ -522,20 +496,30 @@ tmux new -s train
 bash run_train.sh 2>&1 | tee logs/train.$(date +%F_%H%M%S).log
 ```
 
-4. Monitor
+`tmux` controls:
+
+```bash
+Ctrl-b d
+tmux attach -t train
+```
+
+### 14.3 Operation flow (GPU check, monitoring, stop)
+
+Before starting, check available GPUs:
+
+```bash
+nvidia-smi --query-gpu=index,name,memory.used,memory.total,utilization.gpu --format=csv
+nvidia-smi --query-compute-apps=pid,process_name,used_memory,gpu_uuid --format=csv,noheader
+```
+
+Monitor while running:
 
 ```bash
 watch -n 2 nvidia-smi
 ps -fu $USER | grep -E 'python|dorado|train'
 ```
 
-5. Stop
+Stop:
 
-- Press `Ctrl-c` in the active `tmux` pane
-- For background processes: `pkill -f 'python Train.py'`
-
-`nohup` is also available:
-
-```bash
-nohup bash run_train.sh > logs/nohup.$(date +%F_%H%M%S).log 2>&1 &
-```
+- Foreground/`tmux`: `Ctrl-c`
+- Background process: `pkill -f 'python Train.py'`

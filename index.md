@@ -464,50 +464,9 @@ hostname
 nvidia-smi -L
 ```
 
-### 14.2 実行例（`tmux` 推奨）
+### 14.2 シェルスクリプトで投げる方法
 
-```bash
-tmux new -s train
-source $HOME/.pyenv/versions/anaconda3-2023.03/bin/activate
-conda activate <env名>
-export CUDA_VISIBLE_DEVICES="0,1,2,3"
-python Train.py
-```
-
-`hpca1`（GPU 1枚）では、例えば次のように実行する:
-
-```bash
-tmux new -s train
-source $HOME/.pyenv/versions/anaconda3-2023.03/bin/activate
-conda activate <env名>
-export CUDA_VISIBLE_DEVICES="0"
-python Train.py
-```
-
-デタッチ:
-
-```bash
-Ctrl-b d
-```
-
-再接続:
-
-```bash
-tmux attach -t train
-```
-
-### 14.3 `hpch1` / `hpca1` 内でジョブを流す手順（推奨）
-
-`hpch1` / `hpca1` では、`qsub` ではなく直接実行で運用する。
-
-1. 空きGPUを確認
-
-```bash
-nvidia-smi --query-gpu=index,name,memory.used,memory.total,utilization.gpu --format=csv
-nvidia-smi --query-compute-apps=pid,process_name,used_memory,gpu_uuid --format=csv,noheader
-```
-
-2. 実行スクリプトを作る（例: `run_train.sh`）
+まず実行スクリプトを作る（例: `run_train.sh`）。
 
 ```bash
 #!/bin/bash
@@ -518,7 +477,22 @@ export CUDA_VISIBLE_DEVICES="0"
 python Train.py
 ```
 
-3. `tmux` で実行（推奨）
+実行方法は次の3通り:
+
+1. フォアグラウンド（短時間向け）
+
+```bash
+bash run_train.sh
+```
+
+2. `nohup` バックグラウンド（切断耐性あり）
+
+```bash
+mkdir -p logs
+nohup bash run_train.sh > logs/nohup.$(date +%F_%H%M%S).log 2>&1 &
+```
+
+3. `tmux` 実行（長時間向け・推奨）
 
 ```bash
 mkdir -p logs
@@ -526,20 +500,30 @@ tmux new -s train
 bash run_train.sh 2>&1 | tee logs/train.$(date +%F_%H%M%S).log
 ```
 
-4. 監視
+`tmux` の操作:
+
+```bash
+Ctrl-b d
+tmux attach -t train
+```
+
+### 14.3 運用フロー（GPU確認・監視・停止）
+
+実行前に空きGPUを確認:
+
+```bash
+nvidia-smi --query-gpu=index,name,memory.used,memory.total,utilization.gpu --format=csv
+nvidia-smi --query-compute-apps=pid,process_name,used_memory,gpu_uuid --format=csv,noheader
+```
+
+実行中の監視:
 
 ```bash
 watch -n 2 nvidia-smi
 ps -fu $USER | grep -E 'python|dorado|train'
 ```
 
-5. 停止
+停止:
 
-- 実行中の `tmux` 画面で `Ctrl-c`
-- バックグラウンド実行を止める場合: `pkill -f 'python Train.py'`
-
-必要なら `nohup` でも実行可能:
-
-```bash
-nohup bash run_train.sh > logs/nohup.$(date +%F_%H%M%S).log 2>&1 &
-```
+- 前面実行/`tmux` 実行: `Ctrl-c`
+- バックグラウンド停止: `pkill -f 'python Train.py'`
