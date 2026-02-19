@@ -145,11 +145,12 @@ Notes:
 - `hpc50` was unreachable during one check, so `qconf` values are used.
 - Current `gpu.q` members are `hpc50 hpc51 hpc58`.
 
-### 4.2 `hpch1` (`qsub` external GPU server)
+### 4.2 `qsub`-external GPU servers
 
 | Host | CPU threads (`nproc`) | Memory | GPU |
 |---|---:|---:|---|
 | `hpch1` | 32 | ~1.0 TiB | NVIDIA H100 NVL x4 |
+| `hpca1` | 64 | ~125 GiB | NVIDIA A100 80GB PCIe x1 |
 
 ## 5. Minimal Batch Job (CPU)
 
@@ -433,14 +434,22 @@ print("device count:", torch.cuda.device_count())
 PY
 ```
 
-## 14. How to Use `hpch1` (Direct Execution)
+## 14. How to Use `hpch1` / `hpca1` (Direct Execution)
 
-`hpch1` is used through direct SSH execution.
+`hpch1` and `hpca1` are used through direct SSH execution.
 
 ### 14.1 Connect and verify
 
 ```bash
 ssh <username>@hpch1
+hostname
+nvidia-smi -L
+```
+
+For `hpca1`:
+
+```bash
+ssh <username>@hpca1
 hostname
 nvidia-smi -L
 ```
@@ -452,6 +461,16 @@ tmux new -s train
 source $HOME/.pyenv/versions/anaconda3-2023.03/bin/activate
 conda activate <env_name>
 export CUDA_VISIBLE_DEVICES="0,1,2,3"
+python Train.py
+```
+
+On `hpca1` (single GPU), use for example:
+
+```bash
+tmux new -s train
+source $HOME/.pyenv/versions/anaconda3-2023.03/bin/activate
+conda activate <env_name>
+export CUDA_VISIBLE_DEVICES="0"
 python Train.py
 ```
 

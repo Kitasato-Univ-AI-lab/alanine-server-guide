@@ -145,11 +145,12 @@ qhost
 - `hpc50` は確認時にネットワーク到達不可だったため、`qconf` の設定値を記載
 - 現在の `gpu.q` は `hpc50 hpc51 hpc58` で構成
 
-### 4.2 `hpch1`（`qsub` 外のGPUサーバー）
+### 4.2 `qsub` 外のGPUサーバー
 
 | ホスト | CPUスレッド (`nproc`) | メモリ | GPU |
 |---|---:|---:|---|
 | `hpch1` | 32 | 約1.0 TiB | NVIDIA H100 NVL x4 |
+| `hpca1` | 64 | 約125 GiB | NVIDIA A100 80GB PCIe x1 |
 
 ## 5. 最小のバッチジョブ投入（CPU）
 
@@ -437,14 +438,22 @@ print("device count:", torch.cuda.device_count())
 PY
 ```
 
-## 14. `hpch1` の使い方（直接実行）
+## 14. `hpch1` / `hpca1` の使い方（直接実行）
 
-`hpch1` は `qsub` 配信先ではないため、SSHでログインして実行する。
+`hpch1` と `hpca1` は `qsub` 配信先ではないため、SSHでログインして実行する。
 
 ### 14.1 接続と基本確認
 
 ```bash
 ssh <ユーザー名>@hpch1
+hostname
+nvidia-smi -L
+```
+
+`hpca1` を使う場合:
+
+```bash
+ssh <ユーザー名>@hpca1
 hostname
 nvidia-smi -L
 ```
@@ -456,6 +465,16 @@ tmux new -s train
 source $HOME/.pyenv/versions/anaconda3-2023.03/bin/activate
 conda activate <env名>
 export CUDA_VISIBLE_DEVICES="0,1,2,3"
+python Train.py
+```
+
+`hpca1`（GPU 1枚）では、例えば次のように実行する:
+
+```bash
+tmux new -s train
+source $HOME/.pyenv/versions/anaconda3-2023.03/bin/activate
+conda activate <env名>
+export CUDA_VISIBLE_DEVICES="0"
 python Train.py
 ```
 
