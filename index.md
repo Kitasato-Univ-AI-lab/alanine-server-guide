@@ -495,3 +495,51 @@ Ctrl-b d
 ```bash
 tmux attach -t train
 ```
+
+### 14.3 `hpch1` / `hpca1` 内でジョブを流す手順（推奨）
+
+`hpch1` / `hpca1` では、`qsub` ではなく直接実行で運用する。
+
+1. 空きGPUを確認
+
+```bash
+nvidia-smi --query-gpu=index,name,memory.used,memory.total,utilization.gpu --format=csv
+nvidia-smi --query-compute-apps=pid,process_name,used_memory,gpu_uuid --format=csv,noheader
+```
+
+2. 実行スクリプトを作る（例: `run_train.sh`）
+
+```bash
+#!/bin/bash
+set -eu
+source $HOME/.pyenv/versions/anaconda3-2023.03/bin/activate
+conda activate <env名>
+export CUDA_VISIBLE_DEVICES="0"
+python Train.py
+```
+
+3. `tmux` で実行（推奨）
+
+```bash
+mkdir -p logs
+tmux new -s train
+bash run_train.sh 2>&1 | tee logs/train.$(date +%F_%H%M%S).log
+```
+
+4. 監視
+
+```bash
+watch -n 2 nvidia-smi
+ps -fu $USER | grep -E 'python|dorado|train'
+```
+
+5. 停止
+
+- 実行中の `tmux` 画面で `Ctrl-c`
+- バックグラウンド実行を止める場合: `pkill -f 'python Train.py'`
+
+必要なら `nohup` でも実行可能:
+
+```bash
+nohup bash run_train.sh > logs/nohup.$(date +%F_%H%M%S).log 2>&1 &
+```
