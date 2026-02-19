@@ -438,6 +438,12 @@ PY
 
 `hpch1` and `hpca1` are used through direct SSH execution.
 
+If you are already logged in to `alanine`, you can directly enter `hpca1` with:
+
+```bash
+ssh hpca1
+```
+
 ### 14.1 Connect and verify
 
 ```bash
